@@ -56,7 +56,7 @@ const L=[[87,"الأعلى"],[88,"الغاشية"],[89,"الفجر"],[90,"الب
 [78,"النبأ"],[79,"النازعات"],[80,"عبس"],[81,"التكوير"],[82,"الانفطار"],[83,"المطففين"],[84,"الانشقاق"],[85,"البروج"],[86,"الطارق"]];
 const $=id=>document.getElementById(id);
 const ov=$('ov'),pl=$('pl'),v=$('v'),bp=$('bp'),nt=$('nt');
-let cur=null,voices=[];
+let cur=null,voices=[],au=null;
 L.forEach(([n,name],i)=>{
   const b=document.createElement('button');
   b.className='card';b.style.setProperty('--h',(i*47)%360);
@@ -67,33 +67,47 @@ L.forEach(([n,name],i)=>{
 function loadV(){try{voices=speechSynthesis.getVoices()||[]}catch(e){}}
 if('speechSynthesis' in window){loadV();speechSynthesis.onvoiceschanged=loadV}
 function speak(){
-  nt.textContent='';
-  if(!cur)return;
-  if(!('speechSynthesis' in window)){nt.textContent='هذا المتصفح لا يدعم النطق — افتح الرابط في كروم أو سفاري';return}
+  if(!cur||!('speechSynthesis' in window))return;
   loadV();
   const vo=voices.find(x=>/^ar/i.test(x.lang));
-  if(!vo)nt.textContent='لا يوجد صوت عربي في هذا الجهاز (فعّله من إعدادات تحويل النص إلى كلام)';
   try{
     const u=new SpeechSynthesisUtterance('سورة '+cur.name);
     if(vo){u.voice=vo;u.lang=vo.lang}else u.lang='ar-SA';
     u.rate=.85;u.volume=1;
-    u.onerror=e=>{nt.textContent='خطأ في الصوت: '+(e.error||'')};
     speechSynthesis.cancel();
     setTimeout(()=>speechSynthesis.speak(u),80);
-  }catch(e){nt.textContent='تعذّر تشغيل الصوت'}
+  }catch(e){}
+}
+function stopAudio(){
+  try{speechSynthesis.cancel()}catch(e){}
+  if(au){au.onerror=null;au.pause();au=null}
+}
+function say(){
+  if(!cur)return;
+  stopAudio();
+  const tries=[cur.n+'.m4a',cur.n+'.mp3'];
+  let k=0;
+  const next=()=>{
+    if(k>=tries.length){speak();return}
+    const a=new Audio(tries[k++]);
+    au=a;
+    a.onerror=()=>{a.onerror=null;next()};
+    a.play().catch(()=>{});
+  };
+  next();
 }
 function openS(n,name){
   cur={n,name};$('ovt').textContent='سورة '+name;
   bp.className='btn';bp.textContent='▶';
-  ov.className='on';speak();
+  ov.className='on';say();
 }
-function back(){try{speechSynthesis.cancel()}catch(e){};ov.className=''}
+function back(){stopAudio();ov.className=''}
 function stop(){v.pause();v.removeAttribute('src');v.load();pl.className=''}
-$('bb').onclick=back;$('bs').onclick=speak;$('pb').onclick=stop;
+$('bb').onclick=back;$('bs').onclick=say;$('pb').onclick=stop;
 bp.onclick=()=>{
   if(!cur)return;
-  try{speechSynthesis.cancel()}catch(e){}
-  v.src='videos/'+cur.n+'.mp4';pl.className='on';v.play().catch(()=>{});
+  stopAudio();
+  v.src=cur.n+'.mp4';pl.className='on';v.play().catch(()=>{});
 };
 v.onerror=()=>{if(!v.getAttribute('src'))return;stop();bp.className='btn no';bp.textContent='⏳'};
 </script>
