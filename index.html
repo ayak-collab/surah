@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>سور القرآن</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf6ee;--ink:#1f2a24;--card-l:88%;--card-s:45%;--card-ink:20%;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--ink:#f1ece0;--card-l:24%;--card-s:35%;--card-ink:93%}}
+:root[data-theme="dark"]{--bg:#141a17;--ink:#f1ece0;--card-l:24%;--card-s:35%;--card-ink:93%}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Amiri','Noto Naskh Arabic','Geeza Pro',serif;padding:14px 14px 32px}
+h2{text-align:center;font-size:1.6rem;margin:20px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:560px;margin:0 auto}
+.card{border:0;border-radius:22px;min-height:104px;cursor:pointer;font-family:inherit;position:relative;
+background:hsl(var(--h) var(--card-s) var(--card-l));color:hsl(var(--h) 40% var(--card-ink));
+display:flex;align-items:center;justify-content:center;font-size:1.9rem;box-shadow:0 2px 0 rgba(0,0,0,.12)}
+.card:active{transform:scale(.97)}
+.card i{position:absolute;top:8px;inset-inline-start:12px;font-style:normal;font-size:.9rem;opacity:.6}
+#ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;background:var(--bg);z-index:10;padding:20px;text-align:center}
+#ov.on{display:flex}
+#ovt{font-size:3.2rem;line-height:1.3}
+.row{display:flex;gap:16px;align-items:center;justify-content:center}
+.btn{border:0;border-radius:50%;font-size:2.4rem;cursor:pointer;color:#fff;font-family:inherit}
+#bp{width:120px;height:120px;background:#1a7f4b;font-size:3.6rem}
+#bp.no{background:#9a9a9a}
+#bs,#bb{width:84px;height:84px;background:#5b6b63}
+#nt{font-size:1rem;opacity:.75;min-height:1.2em;font-family:system-ui,sans-serif}
+#pl{position:fixed;inset:0;display:none;flex-direction:column;background:#000;z-index:20}
+#pl.on{display:flex}
+#pl video{flex:1;width:100%;min-height:0;background:#000}
+#pb{width:100%;border:0;background:#5b6b63;color:#fff;font-size:2.2rem;padding:16px 0 calc(16px + env(safe-area-inset-bottom,0px));cursor:pointer}
+</style>
+</head>
+<body>
+<h2>حزب الأعلى</h2><div class="grid" id="g1"></div>
+<h2>حزب النبأ</h2><div class="grid" id="g2"></div>
+
+<div id="ov">
+  <div id="ovt"></div>
+  <div class="row">
+    <button class="btn" id="bs" aria-label="إعادة الاستماع">🔊</button>
+    <button class="btn" id="bp" aria-label="تشغيل">▶</button>
+    <button class="btn" id="bb" aria-label="رجوع">↩</button>
+  </div>
+  <div id="nt"></div>
+</div>
+
+<div id="pl"><video id="v" controls playsinline></video><button id="pb" aria-label="رجوع">↩</button></div>
+
+<script>
+const L=[[87,"الأعلى"],[88,"الغاشية"],[89,"الفجر"],[90,"البلد"],[91,"الشمس"],[92,"الليل"],[93,"الضحى"],[94,"الشرح"],[95,"التين"],[96,"العلق"],[97,"القدر"],[98,"البينة"],[99,"الزلزلة"],[100,"العاديات"],[101,"القارعة"],[102,"التكاثر"],[103,"العصر"],[104,"الهمزة"],[105,"الفيل"],[106,"قريش"],[107,"الماعون"],[108,"الكوثر"],[109,"الكافرون"],[110,"النصر"],[111,"المسد"],[112,"الإخلاص"],[113,"الفلق"],[114,"الناس"],
+[78,"النبأ"],[79,"النازعات"],[80,"عبس"],[81,"التكوير"],[82,"الانفطار"],[83,"المطففين"],[84,"الانشقاق"],[85,"البروج"],[86,"الطارق"]];
+const $=id=>document.getElementById(id);
+const ov=$('ov'),pl=$('pl'),v=$('v'),bp=$('bp'),nt=$('nt');
+let cur=null,voices=[];
+L.forEach(([n,name],i)=>{
+  const b=document.createElement('button');
+  b.className='card';b.style.setProperty('--h',(i*47)%360);
+  b.innerHTML='<i>'+n+'</i>'+name;
+  b.onclick=()=>openS(n,name);
+  $(i<28?'g1':'g2').appendChild(b);
+});
+function loadV(){try{voices=speechSynthesis.getVoices()||[]}catch(e){}}
+if('speechSynthesis' in window){loadV();speechSynthesis.onvoiceschanged=loadV}
+function speak(){
+  nt.textContent='';
+  if(!cur)return;
+  if(!('speechSynthesis' in window)){nt.textContent='هذا المتصفح لا يدعم النطق — افتح الرابط في كروم أو سفاري';return}
+  loadV();
+  const vo=voices.find(x=>/^ar/i.test(x.lang));
+  if(!vo)nt.textContent='لا يوجد صوت عربي في هذا الجهاز (فعّله من إعدادات تحويل النص إلى كلام)';
+  try{
+    const u=new SpeechSynthesisUtterance('سورة '+cur.name);
+    if(vo){u.voice=vo;u.lang=vo.lang}else u.lang='ar-SA';
+    u.rate=.85;u.volume=1;
+    u.onerror=e=>{nt.textContent='خطأ في الصوت: '+(e.error||'')};
+    speechSynthesis.cancel();
+    setTimeout(()=>speechSynthesis.speak(u),80);
+  }catch(e){nt.textContent='تعذّر تشغيل الصوت'}
+}
+function openS(n,name){
+  cur={n,name};$('ovt').textContent='سورة '+name;
+  bp.className='btn';bp.textContent='▶';
+  ov.className='on';speak();
+}
+function back(){try{speechSynthesis.cancel()}catch(e){};ov.className=''}
+function stop(){v.pause();v.removeAttribute('src');v.load();pl.className=''}
+$('bb').onclick=back;$('bs').onclick=speak;$('pb').onclick=stop;
+bp.onclick=()=>{
+  if(!cur)return;
+  try{speechSynthesis.cancel()}catch(e){}
+  v.src='videos/'+cur.n+'.mp4';pl.className='on';v.play().catch(()=>{});
+};
+v.onerror=()=>{if(!v.getAttribute('src'))return;stop();bp.className='btn no';bp.textContent='⏳'};
+</script>
+</body>
+</html>
